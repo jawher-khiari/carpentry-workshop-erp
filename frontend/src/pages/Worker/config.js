@@ -8,10 +8,7 @@ export const fields = {
   phone: {
     type: 'phone',
   },
-  email: {
-    type: 'email',
-  },
-  address: {
-    type: 'string',
+  dailyWage: {
+    type: 'number',
   },
 };

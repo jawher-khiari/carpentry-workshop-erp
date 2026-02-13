@@ -7,6 +7,7 @@ const NotFound = lazy(() => import('@/pages/NotFound.jsx'));
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Customer = lazy(() => import('@/pages/Customer'));
+const Inventory = lazy(() => import('@/pages/Inventory'));
 const Invoice = lazy(() => import('@/pages/Invoice'));
 const InvoiceCreate = lazy(() => import('@/pages/Invoice/InvoiceCreate'));
 
@@ -20,6 +21,10 @@ const QuoteUpdate = lazy(() => import('@/pages/Quote/QuoteUpdate'));
 const Payment = lazy(() => import('@/pages/Payment/index'));
 const PaymentRead = lazy(() => import('@/pages/Payment/PaymentRead'));
 const PaymentUpdate = lazy(() => import('@/pages/Payment/PaymentUpdate'));
+
+const Worker = lazy(() => import('@/pages/Worker'));
+const Attendance = lazy(() => import('@/pages/Attendance'));
+const Expense = lazy(() => import('@/pages/Expense'));
 
 const Settings = lazy(() => import('@/pages/Settings/Settings'));
 const PaymentMode = lazy(() => import('@/pages/PaymentMode'));
@@ -51,6 +56,10 @@ let routes = {
     {
       path: '/customer',
       element: <Customer />,
+    },
+    {
+      path: '/inventory',
+      element: <Inventory />,
     },
 
     {
@@ -100,6 +109,19 @@ let routes = {
     {
       path: '/payment/update/:id',
       element: <PaymentUpdate />,
+    },
+
+    {
+      path: '/worker',
+      element: <Worker />,
+    },
+    {
+      path: '/attendance',
+      element: <Attendance />,
+    },
+    {
+      path: '/expense',
+      element: <Expense />,
     },
 
     {

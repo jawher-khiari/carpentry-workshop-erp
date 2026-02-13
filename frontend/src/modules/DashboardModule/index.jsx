@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Tag, Row, Col } from 'antd';
+import { Tag, Row, Col, Card, Statistic, Spin } from 'antd';
 import useLanguage from '@/locale/useLanguage';
 
 import { useMoney } from '@/settings';
@@ -22,6 +22,9 @@ export default function DashboardModule() {
   const translate = useLanguage();
   const { moneyFormatter } = useMoney();
   const money_format_settings = useSelector(selectMoneyFormat);
+
+  const [expenseData, setExpenseData] = useState({ total: 0, salaries: 0, materials: 0 });
+  const [expenseLoading, setExpenseLoading] = useState(true);
 
   const getStatsData = async ({ entity, currency }) => {
     return await request.summary({
@@ -47,6 +50,32 @@ export default function DashboardModule() {
   const { result: clientResult, isLoading: clientLoading } = useFetch(() =>
     request.summary({ entity: 'client' })
   );
+
+  // Fetch expense data for financial reporting
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      setExpenseLoading(true);
+      try {
+        const res = await request.listAll({ entity: 'expense' });
+        if (res.success && res.result) {
+          const expenses = res.result;
+          let totalExpenses = 0;
+          let totalSalaries = 0;
+          let totalMaterials = 0;
+          expenses.forEach((exp) => {
+            totalExpenses += exp.amount || 0;
+            if (exp.category === 'salary') totalSalaries += exp.amount || 0;
+            if (exp.category === 'material') totalMaterials += exp.amount || 0;
+          });
+          setExpenseData({ total: totalExpenses, salaries: totalSalaries, materials: totalMaterials });
+        }
+      } catch (e) {
+        // silently fail
+      }
+      setExpenseLoading(false);
+    };
+    fetchExpenses();
+  }, []);
 
   useEffect(() => {
     const currency = money_format_settings.default_currency_code || null;
@@ -124,21 +153,25 @@ export default function DashboardModule() {
     );
   });
 
+  // Calculate net profit
+  const totalIncome = paymentResult?.total || 0;
+  const netProfit = totalIncome - expenseData.total;
+
   if (money_format_settings) {
     return (
       <>
         <Row gutter={[32, 32]}>
           <SummaryCard
-            title={translate('Invoices')}
-            prefix={translate('This month')}
+            title={translate('Weekly Income')}
+            prefix={translate('This week')}
             isLoading={invoiceLoading}
             data={invoiceResult?.total}
           />
           <SummaryCard
-            title={translate('Quote')}
+            title={translate('Monthly Income')}
             prefix={translate('This month')}
-            isLoading={quoteLoading}
-            data={quoteResult?.total}
+            isLoading={paymentLoading}
+            data={paymentResult?.total}
           />
           <SummaryCard
             title={translate('paid')}
@@ -154,6 +187,51 @@ export default function DashboardModule() {
           />
         </Row>
         <div className="space30"></div>
+
+        {/* Financial Summary Section */}
+        <Row gutter={[32, 32]}>
+          <Col className="gutter-row w-full" sm={{ span: 24 }} md={{ span: 8 }}>
+            <Card>
+              <Spin spinning={expenseLoading}>
+                <Statistic
+                  title={translate('Total Expenses')}
+                  value={expenseData.total}
+                  precision={2}
+                  suffix="TND"
+                  valueStyle={{ color: '#cf1322' }}
+                />
+              </Spin>
+            </Card>
+          </Col>
+          <Col className="gutter-row w-full" sm={{ span: 24 }} md={{ span: 8 }}>
+            <Card>
+              <Spin spinning={expenseLoading}>
+                <Statistic
+                  title={translate('Total Salaries')}
+                  value={expenseData.salaries}
+                  precision={2}
+                  suffix="TND"
+                  valueStyle={{ color: '#faad14' }}
+                />
+              </Spin>
+            </Card>
+          </Col>
+          <Col className="gutter-row w-full" sm={{ span: 24 }} md={{ span: 8 }}>
+            <Card>
+              <Spin spinning={expenseLoading || paymentLoading}>
+                <Statistic
+                  title={translate('Net Profit')}
+                  value={netProfit}
+                  precision={2}
+                  suffix="TND"
+                  valueStyle={{ color: netProfit >= 0 ? '#3f8600' : '#cf1322' }}
+                />
+              </Spin>
+            </Card>
+          </Col>
+        </Row>
+        <div className="space30"></div>
+
         <Row gutter={[32, 32]}>
           <Col className="gutter-row w-full" sm={{ span: 24 }} md={{ span: 24 }} lg={{ span: 18 }}>
             <div className="whiteBox shadow" style={{ height: 458 }}>

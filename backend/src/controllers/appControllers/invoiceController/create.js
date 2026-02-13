@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const Model = mongoose.model('Invoice');
+const Product = mongoose.model('Product');
 
 const { calculate } = require('@/helpers');
 const { increaseBySettingKey } = require('@/middlewares/settings');
@@ -19,25 +20,34 @@ const create = async (req, res) => {
     });
   }
 
-  const { items = [], taxRate = 0, discount = 0 } = value;
+  const { items = [], taxRate = 19, discount = 0, laborCost = 0 } = value;
 
-  // default
   let subTotal = 0;
   let taxTotal = 0;
   let total = 0;
+  let laborTotal = laborCost;
 
-  //Calculate the items array with subTotal, total, taxTotal
+  // Calculate item totals and taxable amounts
+  let taxableSubTotal = 0;
+
   items.map((item) => {
-    let total = calculate.multiply(item['quantity'], item['price']);
-    //sub total
-    subTotal = calculate.add(subTotal, total);
-    //item total
-    item['total'] = total;
+    let itemTotal = calculate.multiply(item['quantity'], item['price']);
+    subTotal = calculate.add(subTotal, itemTotal);
+    item['total'] = itemTotal;
+
+    // Only add to taxable total if NOT customer-provided material
+    if (!item.customerProvided) {
+      taxableSubTotal = calculate.add(taxableSubTotal, itemTotal);
+    }
   });
-  taxTotal = calculate.multiply(subTotal, taxRate / 100);
-  total = calculate.add(subTotal, taxTotal);
+
+  // 19% TVA applies to taxable items + labor cost
+  const taxableAmount = calculate.add(taxableSubTotal, laborTotal);
+  taxTotal = calculate.multiply(taxableAmount, taxRate / 100);
+  total = calculate.add(calculate.add(subTotal, laborTotal), taxTotal);
 
   body['subTotal'] = subTotal;
+  body['laborTotal'] = laborTotal;
   body['taxTotal'] = taxTotal;
   body['total'] = total;
   body['items'] = items;
@@ -47,23 +57,29 @@ const create = async (req, res) => {
   body['paymentStatus'] = paymentStatus;
   body['createdBy'] = req.admin._id;
 
-  // Creating a new document in the collection
+  // Create the invoice document
   const result = await new Model(body).save();
   const fileId = 'invoice-' + result._id + '.pdf';
   const updateResult = await Model.findOneAndUpdate(
     { _id: result._id },
     { pdf: fileId },
-    {
-      new: true,
-    }
+    { new: true }
   ).exec();
-  // Returning successfull response
+
+  // Deduct sold quantities from inventory for non-customer-provided items
+  for (const item of items) {
+    if (item.product && !item.customerProvided) {
+      await Product.findOneAndUpdate(
+        { _id: item.product, removed: false },
+        { $inc: { quantity: -item.quantity }, updated: Date.now() }
+      ).exec();
+    }
+  }
 
   increaseBySettingKey({
     settingKey: 'last_invoice_number',
   });
 
-  // Returning successfull response
   return res.status(200).json({
     success: true,
     result: updateResult,

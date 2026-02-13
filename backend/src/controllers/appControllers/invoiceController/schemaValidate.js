@@ -7,20 +7,22 @@ const schema = Joi.object({
   notes: Joi.string().allow(''),
   expiredDate: Joi.date().required(),
   date: Joi.date().required(),
-  // array cannot be empty
   items: Joi.array()
     .items(
       Joi.object({
         _id: Joi.string().allow('').optional(),
+        product: Joi.string().allow('').optional(),
         itemName: Joi.string().required(),
         description: Joi.string().allow(''),
         quantity: Joi.number().required(),
         price: Joi.number().required(),
         total: Joi.number().required(),
+        customerProvided: Joi.boolean().default(false),
       }).required()
     )
     .required(),
   taxRate: Joi.alternatives().try(Joi.number(), Joi.string()).required(),
+  laborCost: Joi.number().default(0),
 });
 
 module.exports = schema;
