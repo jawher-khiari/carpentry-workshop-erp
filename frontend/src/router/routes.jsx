@@ -25,6 +25,7 @@ const PaymentUpdate = lazy(() => import('@/pages/Payment/PaymentUpdate'));
 const Worker = lazy(() => import('@/pages/Worker'));
 const Attendance = lazy(() => import('@/pages/Attendance'));
 const Expense = lazy(() => import('@/pages/Expense'));
+const SalaryReport = lazy(() => import('@/pages/SalaryReport'));
 
 const Settings = lazy(() => import('@/pages/Settings/Settings'));
 const PaymentMode = lazy(() => import('@/pages/PaymentMode'));
@@ -122,6 +123,10 @@ let routes = {
     {
       path: '/expense',
       element: <Expense />,
+    },
+    {
+      path: '/salary-report',
+      element: <SalaryReport />,
     },
 
     {

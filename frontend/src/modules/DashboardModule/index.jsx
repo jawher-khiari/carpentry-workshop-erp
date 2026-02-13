@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
-import { Tag, Row, Col, Card, Statistic, Spin } from 'antd';
+import { Row, Col, Card, Statistic, Spin, Table, Tag, Alert } from 'antd';
+import { WarningOutlined } from '@ant-design/icons';
 import useLanguage from '@/locale/useLanguage';
 
 import { useMoney } from '@/settings';
@@ -25,6 +26,8 @@ export default function DashboardModule() {
 
   const [expenseData, setExpenseData] = useState({ total: 0, salaries: 0, materials: 0 });
   const [expenseLoading, setExpenseLoading] = useState(true);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [lowStockLoading, setLowStockLoading] = useState(true);
 
   const getStatsData = async ({ entity, currency }) => {
     return await request.summary({
@@ -44,14 +47,14 @@ export default function DashboardModule() {
   const {
     result: paymentResult,
     isLoading: paymentLoading,
-    onFetch: fetchPayemntsStats,
+    onFetch: fetchPaymentsStats,
   } = useOnFetch();
 
   const { result: clientResult, isLoading: clientLoading } = useFetch(() =>
     request.summary({ entity: 'client' })
   );
 
-  // Fetch expense data for financial reporting
+  // Fetch expense data filtered to current month
   useEffect(() => {
     const fetchExpenses = async () => {
       setExpenseLoading(true);
@@ -59,13 +62,21 @@ export default function DashboardModule() {
         const res = await request.listAll({ entity: 'expense' });
         if (res.success && res.result) {
           const expenses = res.result;
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+
           let totalExpenses = 0;
           let totalSalaries = 0;
           let totalMaterials = 0;
+
           expenses.forEach((exp) => {
-            totalExpenses += exp.amount || 0;
-            if (exp.category === 'salary') totalSalaries += exp.amount || 0;
-            if (exp.category === 'material') totalMaterials += exp.amount || 0;
+            const expDate = new Date(exp.date);
+            if (expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear) {
+              totalExpenses += exp.amount || 0;
+              if (exp.category === 'salary') totalSalaries += exp.amount || 0;
+              if (exp.category === 'material') totalMaterials += exp.amount || 0;
+            }
           });
           setExpenseData({ total: totalExpenses, salaries: totalSalaries, materials: totalMaterials });
         }
@@ -77,13 +88,31 @@ export default function DashboardModule() {
     fetchExpenses();
   }, []);
 
+  // Fetch low stock products (quantity <= 5)
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLowStockLoading(true);
+      try {
+        const res = await request.listAll({ entity: 'product' });
+        if (res.success && res.result) {
+          const lowStock = res.result.filter((p) => p.quantity <= 5 && !p.removed);
+          setLowStockProducts(lowStock);
+        }
+      } catch (e) {
+        // silently fail
+      }
+      setLowStockLoading(false);
+    };
+    fetchProducts();
+  }, []);
+
   useEffect(() => {
     const currency = money_format_settings.default_currency_code || null;
 
     if (currency) {
       fetchInvoicesStats(getStatsData({ entity: 'invoice', currency }));
       fetchQuotesStats(getStatsData({ entity: 'quote', currency }));
-      fetchPayemntsStats(getStatsData({ entity: 'payment', currency }));
+      fetchPaymentsStats(getStatsData({ entity: 'payment', currency }));
     }
   }, [money_format_settings.default_currency_code]);
 
@@ -96,7 +125,6 @@ export default function DashboardModule() {
       title: translate('Client'),
       dataIndex: ['client', 'name'],
     },
-
     {
       title: translate('Total'),
       dataIndex: 'total',
@@ -114,6 +142,31 @@ export default function DashboardModule() {
     {
       title: translate('Status'),
       dataIndex: 'status',
+    },
+  ];
+
+  const lowStockColumns = [
+    {
+      title: translate('Reference'),
+      dataIndex: 'reference',
+    },
+    {
+      title: translate('Product'),
+      dataIndex: 'name',
+    },
+    {
+      title: translate('Quantity'),
+      dataIndex: 'quantity',
+      render: (qty) => (
+        <Tag color={qty === 0 ? 'red' : 'orange'}>
+          {qty}
+        </Tag>
+      ),
+    },
+    {
+      title: translate('Price'),
+      dataIndex: 'price',
+      render: (price) => moneyFormatter({ amount: price }),
     },
   ];
 
@@ -153,22 +206,37 @@ export default function DashboardModule() {
     );
   });
 
-  // Calculate net profit
+  // Calculate net profit (monthly)
   const totalIncome = paymentResult?.total || 0;
   const netProfit = totalIncome - expenseData.total;
+  const currencyCode = money_format_settings?.default_currency_code;
 
   if (money_format_settings) {
     return (
       <>
+        {/* Low Stock Alerts */}
+        {!lowStockLoading && lowStockProducts.length > 0 && (
+          <>
+            <Alert
+              message={translate('Low Stock Warning')}
+              description={`${lowStockProducts.length} ${translate('products are running low on stock')}`}
+              type="warning"
+              showIcon
+              icon={<WarningOutlined />}
+              style={{ marginBottom: 20 }}
+            />
+          </>
+        )}
+
         <Row gutter={[32, 32]}>
           <SummaryCard
-            title={translate('Weekly Income')}
-            prefix={translate('This week')}
+            title={translate('Invoices')}
+            prefix={translate('This month')}
             isLoading={invoiceLoading}
             data={invoiceResult?.total}
           />
           <SummaryCard
-            title={translate('Monthly Income')}
+            title={translate('Payments')}
             prefix={translate('This month')}
             isLoading={paymentLoading}
             data={paymentResult?.total}
@@ -188,16 +256,16 @@ export default function DashboardModule() {
         </Row>
         <div className="space30"></div>
 
-        {/* Financial Summary Section */}
+        {/* Monthly Financial Summary */}
         <Row gutter={[32, 32]}>
           <Col className="gutter-row w-full" sm={{ span: 24 }} md={{ span: 8 }}>
             <Card>
               <Spin spinning={expenseLoading}>
                 <Statistic
-                  title={translate('Total Expenses')}
+                  title={translate('Monthly Expenses')}
                   value={expenseData.total}
                   precision={2}
-                  suffix="TND"
+                  suffix={currencyCode}
                   valueStyle={{ color: '#cf1322' }}
                 />
               </Spin>
@@ -207,10 +275,10 @@ export default function DashboardModule() {
             <Card>
               <Spin spinning={expenseLoading}>
                 <Statistic
-                  title={translate('Total Salaries')}
+                  title={translate('Monthly Salaries')}
                   value={expenseData.salaries}
                   precision={2}
-                  suffix="TND"
+                  suffix={currencyCode}
                   valueStyle={{ color: '#faad14' }}
                 />
               </Spin>
@@ -220,10 +288,10 @@ export default function DashboardModule() {
             <Card>
               <Spin spinning={expenseLoading || paymentLoading}>
                 <Statistic
-                  title={translate('Net Profit')}
+                  title={translate('Monthly Net Profit')}
                   value={netProfit}
                   precision={2}
-                  suffix="TND"
+                  suffix={currencyCode}
                   valueStyle={{ color: netProfit >= 0 ? '#3f8600' : '#cf1322' }}
                 />
               </Spin>
@@ -249,6 +317,31 @@ export default function DashboardModule() {
           </Col>
         </Row>
         <div className="space30"></div>
+
+        {/* Low Stock Products Table */}
+        {lowStockProducts.length > 0 && (
+          <>
+            <Row gutter={[32, 32]}>
+              <Col className="gutter-row w-full" span={24}>
+                <div className="whiteBox shadow pad20">
+                  <h3 style={{ color: '#22075e', marginBottom: 5, padding: '0 20px 20px' }}>
+                    {translate('Low Stock Products')}
+                  </h3>
+                  <Table
+                    columns={lowStockColumns}
+                    dataSource={lowStockProducts}
+                    rowKey={(record) => record._id}
+                    loading={lowStockLoading}
+                    pagination={false}
+                    size="small"
+                  />
+                </div>
+              </Col>
+            </Row>
+            <div className="space30"></div>
+          </>
+        )}
+
         <Row gutter={[32, 32]}>
           <Col className="gutter-row w-full" sm={{ span: 24 }} lg={{ span: 12 }}>
             <div className="whiteBox shadow pad20" style={{ height: '100%' }}>

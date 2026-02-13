@@ -24,7 +24,7 @@ export default function Attendance() {
 
   const fetchAttendance = async () => {
     setLoading(true);
-    const { success, result } = await request.list({ entity: 'attendance' });
+    const { success, result } = await request.listAll({ entity: 'attendance' });
     if (success) {
       setAttendanceList(result || []);
     }

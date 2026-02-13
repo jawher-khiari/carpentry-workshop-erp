@@ -14,23 +14,18 @@ import {
   SettingOutlined,
   CustomerServiceOutlined,
   ContainerOutlined,
+  CalculatorOutlined,
   FileSyncOutlined,
   DashboardOutlined,
-  TagOutlined,
-  TagsOutlined,
-  UserOutlined,
   CreditCardOutlined,
   MenuOutlined,
-  FileOutlined,
   ShopOutlined,
-  FilterOutlined,
   WalletOutlined,
   ReconciliationOutlined,
   AppstoreOutlined,
   TeamOutlined,
   ClockCircleOutlined,
   DollarOutlined,
-  DatabaseOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -98,6 +93,11 @@ function Sidebar({ collapsible, isMobile = false }) {
       key: 'expense',
       icon: <DollarOutlined />,
       label: <Link to={'/expense'}>{translate('Expenses')}</Link>,
+    },
+    {
+      key: 'salary-report',
+      icon: <CalculatorOutlined />,
+      label: <Link to={'/salary-report'}>{translate('Salary Report')}</Link>,
     },
     {
       key: 'paymentMode',
