@@ -16,10 +16,6 @@ const invoiceSchema = new mongoose.Schema({
     required: true,
   },
   content: String,
-  recurring: {
-    type: String,
-    enum: ['daily', 'weekly', 'monthly', 'annually', 'quarter'],
-  },
   date: {
     type: Date,
     required: true,
@@ -34,27 +30,12 @@ const invoiceSchema = new mongoose.Schema({
     required: true,
     autopopulate: true,
   },
-  converted: {
-    from: {
-      type: String,
-      enum: ['quote', 'offer'],
-    },
-    offer: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'Offer',
-    },
-    quote: {
-      type: mongoose.Schema.ObjectId,
-      ref: 'Quote',
-    },
-  },
   items: [
     {
-      // product: {
-      //   type: mongoose.Schema.ObjectId,
-      //   ref: 'Product',
-      //   // required: true,
-      // },
+      product: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Product',
+      },
       itemName: {
         type: String,
         required: true,
@@ -71,33 +52,33 @@ const invoiceSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
-      // discount: {
-      //   type: Number,
-      //   default: 0,
-      // },
-      // taxRate: {
-      //   type: Number,
-      //   default: 0,
-      // },
-      // subTotal: {
-      //   type: Number,
-      //   default: 0,
-      // },
-      // taxTotal: {
-      //   type: Number,
-      //   default: 0,
-      // },
       total: {
         type: Number,
         required: true,
       },
+      // Customer-provided material flag - no TVA applied when true
+      customerProvided: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
-  taxRate: {
+  // Labor cost added manually by workshop manager
+  laborCost: {
     type: Number,
     default: 0,
   },
+  // TVA rate - default 19% for Tunisia
+  taxRate: {
+    type: Number,
+    default: 19,
+  },
   subTotal: {
+    type: Number,
+    default: 0,
+  },
+  // Total of labor cost
+  laborTotal: {
     type: Number,
     default: 0,
   },
@@ -111,7 +92,7 @@ const invoiceSchema = new mongoose.Schema({
   },
   currency: {
     type: String,
-    default: 'NA',
+    default: 'TND',
     uppercase: true,
     required: true,
   },

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const schema = new mongoose.Schema({
+const productSchema = new mongoose.Schema({
   removed: {
     type: Boolean,
     default: false,
@@ -9,40 +9,44 @@ const schema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-
+  reference: {
+    type: String,
+    required: true,
+  },
   name: {
     type: String,
     required: true,
   },
-  surname: {
-    type: String,
-    default: '',
-  },
-  phone: {
-    type: String,
+  quantity: {
+    type: Number,
     required: true,
+    default: 0,
+    min: 0,
   },
-  email: {
+  price: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  hasTVA: {
+    type: Boolean,
+    default: true,
+  },
+  description: {
     type: String,
     default: '',
   },
-  address: {
-    type: String,
-    default: '',
-  },
-  country: String,
   createdBy: { type: mongoose.Schema.ObjectId, ref: 'Admin' },
-  assigned: { type: mongoose.Schema.ObjectId, ref: 'Admin' },
-  created: {
+  updated: {
     type: Date,
     default: Date.now,
   },
-  updated: {
+  created: {
     type: Date,
     default: Date.now,
   },
 });
 
-schema.plugin(require('mongoose-autopopulate'));
+productSchema.plugin(require('mongoose-autopopulate'));
 
-module.exports = mongoose.model('Client', schema);
+module.exports = mongoose.model('Product', productSchema);
