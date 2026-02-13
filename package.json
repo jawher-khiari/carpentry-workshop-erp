@@ -1,0 +1,62 @@
+{
+  "name": "carpentry-workshop-erp",
+  "version": "1.0.0",
+  "description": "Carpentry Workshop ERP - Desktop Management System",
+  "main": "electron/main.js",
+  "author": "Carpentry Workshop",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:frontend": "cd frontend && npm run build",
+    "build:win": "npm run build:frontend && electron-builder --win --x64",
+    "build:win:setup": "npm run build:frontend && electron-builder --win --x64 -c.win.target=nsis",
+    "build:linux": "npm run build:frontend && electron-builder --linux",
+    "dist": "npm run build:frontend && electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.carpentry-workshop.erp",
+    "productName": "Carpentry Workshop ERP",
+    "copyright": "Copyright 2024 Carpentry Workshop",
+    "directories": {
+      "output": "installer-output"
+    },
+    "files": [
+      "electron/**/*",
+      "backend/**/*",
+      "!backend/node_modules/.cache/**/*",
+      "frontend/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/.env",
+        "to": "backend/.env"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "CarpentryWorkshopERP-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Carpentry Workshop ERP",
+      "include": "electron/installer.nsh"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "icon": "assets/icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.3.0",
+    "electron-builder": "^24.13.3"
+  }
+}

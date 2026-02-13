@@ -1,0 +1,5 @@
+node_modules/
+installer-output/
+frontend/dist/
+*.exe
+.wine/
