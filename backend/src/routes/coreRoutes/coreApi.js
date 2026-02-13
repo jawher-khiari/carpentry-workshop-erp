@@ -51,4 +51,6 @@ router
     catchErrors(settingController.updateBySettingKey)
   );
 router.route('/setting/updateManySetting').patch(catchErrors(settingController.updateManySetting));
+const backupController = require('@/controllers/coreControllers/backupController');
+router.route('/backup').post(catchErrors(backupController.backup));
 module.exports = router;

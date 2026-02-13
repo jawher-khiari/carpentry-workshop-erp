@@ -27,7 +27,7 @@ const update = async (req, res) => {
 
   const { credit } = previousInvoice;
 
-  const { items = [], taxRate = 0, discount = 0 } = req.body;
+  const { items = [], taxRate = 19, discount = 0, laborCost = 0 } = req.body;
 
   if (items.length === 0) {
     return res.status(400).json({
@@ -37,23 +37,28 @@ const update = async (req, res) => {
     });
   }
 
-  // default
   let subTotal = 0;
   let taxTotal = 0;
   let total = 0;
+  let laborTotal = laborCost;
+  let taxableSubTotal = 0;
 
-  //Calculate the items array with subTotal, total, taxTotal
   items.map((item) => {
-    let total = calculate.multiply(item['quantity'], item['price']);
-    //sub total
-    subTotal = calculate.add(subTotal, total);
-    //item total
-    item['total'] = total;
+    let itemTotal = calculate.multiply(item['quantity'], item['price']);
+    subTotal = calculate.add(subTotal, itemTotal);
+    item['total'] = itemTotal;
+
+    if (!item.customerProvided) {
+      taxableSubTotal = calculate.add(taxableSubTotal, itemTotal);
+    }
   });
-  taxTotal = calculate.multiply(subTotal, taxRate / 100);
-  total = calculate.add(subTotal, taxTotal);
+
+  const taxableAmount = calculate.add(taxableSubTotal, laborTotal);
+  taxTotal = calculate.multiply(taxableAmount, taxRate / 100);
+  total = calculate.add(calculate.add(subTotal, laborTotal), taxTotal);
 
   body['subTotal'] = subTotal;
+  body['laborTotal'] = laborTotal;
   body['taxTotal'] = taxTotal;
   body['total'] = total;
   body['items'] = items;
@@ -61,22 +66,19 @@ const update = async (req, res) => {
   if (body.hasOwnProperty('currency')) {
     delete body.currency;
   }
-  // Find document by id and updates with the required fields
 
   let paymentStatus =
     calculate.sub(total, discount) === credit ? 'paid' : credit > 0 ? 'partially' : 'unpaid';
   body['paymentStatus'] = paymentStatus;
 
   const result = await Model.findOneAndUpdate({ _id: req.params.id, removed: false }, body, {
-    new: true, // return the new result instead of the old one
+    new: true,
   }).exec();
-
-  // Returning successfull response
 
   return res.status(200).json({
     success: true,
     result,
-    message: 'we update this document ',
+    message: 'Invoice updated successfully',
   });
 };
 

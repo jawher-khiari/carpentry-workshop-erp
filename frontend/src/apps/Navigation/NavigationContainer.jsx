@@ -14,18 +14,18 @@ import {
   SettingOutlined,
   CustomerServiceOutlined,
   ContainerOutlined,
+  CalculatorOutlined,
   FileSyncOutlined,
   DashboardOutlined,
-  TagOutlined,
-  TagsOutlined,
-  UserOutlined,
   CreditCardOutlined,
   MenuOutlined,
-  FileOutlined,
   ShopOutlined,
-  FilterOutlined,
   WalletOutlined,
   ReconciliationOutlined,
+  AppstoreOutlined,
+  TeamOutlined,
+  ClockCircleOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -55,11 +55,15 @@ function Sidebar({ collapsible, isMobile = false }) {
       label: <Link to={'/'}>{translate('dashboard')}</Link>,
     },
     {
+      key: 'inventory',
+      icon: <AppstoreOutlined />,
+      label: <Link to={'/inventory'}>{translate('Inventory')}</Link>,
+    },
+    {
       key: 'customer',
       icon: <CustomerServiceOutlined />,
       label: <Link to={'/customer'}>{translate('customers')}</Link>,
     },
-
     {
       key: 'invoice',
       icon: <ContainerOutlined />,
@@ -75,7 +79,26 @@ function Sidebar({ collapsible, isMobile = false }) {
       icon: <CreditCardOutlined />,
       label: <Link to={'/payment'}>{translate('payments')}</Link>,
     },
-
+    {
+      key: 'worker',
+      icon: <TeamOutlined />,
+      label: <Link to={'/worker'}>{translate('Workers')}</Link>,
+    },
+    {
+      key: 'attendance',
+      icon: <ClockCircleOutlined />,
+      label: <Link to={'/attendance'}>{translate('Attendance')}</Link>,
+    },
+    {
+      key: 'expense',
+      icon: <DollarOutlined />,
+      label: <Link to={'/expense'}>{translate('Expenses')}</Link>,
+    },
+    {
+      key: 'salary-report',
+      icon: <CalculatorOutlined />,
+      label: <Link to={'/salary-report'}>{translate('Salary Report')}</Link>,
+    },
     {
       key: 'paymentMode',
       label: <Link to={'/payment/mode'}>{translate('payments_mode')}</Link>,

@@ -23,6 +23,12 @@ const routerApp = (entity, controller) => {
   if (entity === 'quote') {
     router.route(`/${entity}/convert/:id`).get(catchErrors(controller['convert']));
   }
+
+  // Attendance check-in/check-out routes
+  if (entity === 'attendance') {
+    router.route(`/${entity}/checkIn`).post(catchErrors(controller['checkIn']));
+    router.route(`/${entity}/checkOut`).post(catchErrors(controller['checkOut']));
+  }
 };
 
 routesList.forEach(({ entity, controllerName }) => {
